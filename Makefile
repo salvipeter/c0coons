@@ -1,0 +1,8 @@
+all: example
+
+INCLUDES=-I../../libgeom
+LIBS=-L../../libgeom/release -lgeom
+CXXFLAGS=-Wall -pedantic -std=c++17 $(INCLUDES)
+
+example: example.o c0coons.o
+	g++ -o $@ $^ $(LIBS)
