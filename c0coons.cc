@@ -71,7 +71,7 @@ static Vector3D evalRationalDerivative(const C0Coons::RationalCurve &curve, doub
   coeff = bernstein(n - 1, u);
   Point3D dp(0.0, 0.0, 0.0);
   double dw = 0;
-  for (size_t k = 0; k <= n; ++k) {
+  for (size_t k = 0; k < n; ++k) {
     dp += dcp[k] * dwi[k] * coeff[k];
     dw += dwi[k] * coeff[k];
   }
