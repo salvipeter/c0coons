@@ -76,7 +76,7 @@ static Vector3D evalRationalDerivative(const C0Coons::RationalCurve &curve, doub
     dw += dwi[k] * coeff[k];
   }
 
-  return (dp - p * dw) / w;
+  return (dp - p / w * dw) / w;
 }
 
 C0Coons::C0Coons(const std::vector<RationalCurve> &boundaries)
