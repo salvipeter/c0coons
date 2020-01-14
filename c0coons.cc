@@ -34,7 +34,8 @@ static DoubleVector bernstein(size_t n, double u) {
   return coeff;
 }
 
-static Point3D evalRational(const C0Coons::RationalCurve &curve, double u) {
+Point3D
+C0Coons::evalRational(const RationalCurve &curve, double u) {
   const auto &cp = curve.first;
   const auto &wi = curve.second;
   size_t n = cp.size() - 1;
@@ -48,7 +49,8 @@ static Point3D evalRational(const C0Coons::RationalCurve &curve, double u) {
   return p / w;
 }
 
-static Vector3D evalRationalDerivative(const C0Coons::RationalCurve &curve, double u) {
+Vector3D
+C0Coons::evalRationalDerivative(const RationalCurve &curve, double u) {
   const auto &cp = curve.first;
   const auto &wi = curve.second;
   size_t n = cp.size() - 1;
@@ -79,9 +81,8 @@ static Vector3D evalRationalDerivative(const C0Coons::RationalCurve &curve, doub
   return (dp - p / w * dw) / w;
 }
 
-C0Coons::C0Coons(const std::vector<RationalCurve> &boundaries)
-  : n_(boundaries.size()), boundaries_(boundaries)
-{
+void
+C0Coons::initialize() {         // assumes that n_ and boundaries_ are already set
   // Setup Domain
   if (n_ == 4)
     domain_ = { {1,1}, {-1,1}, {-1,-1}, {1,-1} };
@@ -92,7 +93,7 @@ C0Coons::C0Coons(const std::vector<RationalCurve> &boundaries)
   }
 
   // Store corners
-  for (const auto &b : boundaries)
+  for (const auto &b : boundaries_)
     corners_.push_back(b.first.front());
 
   // Setup opposite curves
@@ -109,6 +110,20 @@ C0Coons::C0Coons(const std::vector<RationalCurve> &boundaries)
       auto q2 = q1 + evalRationalDerivative(boundaries_[imm], 0) / 3;
       opposites_.push_back({ { q1, q2, p2, p1 }, { 1, 1, 1, 1 } });
     }
+}
+
+C0Coons::C0Coons(const std::vector<RationalCurve> &boundaries)
+  : n_(boundaries.size()), boundaries_(boundaries)
+{
+  initialize();
+}
+
+C0Coons::C0Coons(const std::vector<PointVector> &boundaries) : n_(boundaries.size()) {
+  std::transform(boundaries.begin(), boundaries.end(), std::back_inserter(boundaries_),
+                 [&](const PointVector &points) {
+                   return std::make_pair(points, DoubleVector(points.size(), 1));
+                 });
+  initialize();
 }
 
 Point3D
@@ -173,6 +188,17 @@ C0Coons::eval(const Point2D &uv) const {
     p += evalRibbon(i, { s, 1 - h1 }) * h1 / 2;
   }
   return p;
+}
+
+TriMesh
+C0Coons::eval(size_t resolution) const {
+  TriMesh mesh = meshTopology(resolution);
+  Point2DVector uvs = parameters(resolution);
+  PointVector points; points.reserve(uvs.size());
+  std::transform(uvs.begin(), uvs.end(), std::back_inserter(points),
+                 [&](const Point2D &uv) { return eval(uv); });
+  mesh.setPoints(points);
+  return mesh;
 }
 
 Point2DVector

@@ -45,20 +45,6 @@ int main(int argc, char **argv) {
   if (argc == 3)
     resolution = std::atoi(argv[2]);
 
-  auto curves = readBezierBoundary(argv[1]);
-  std::vector<C0Coons::RationalCurve> boundaries;
-  std::transform(curves.begin(), curves.end(), std::back_inserter(boundaries),
-                 [&](const PointVector &points) {
-                   return std::make_pair(points, DoubleVector(points.size(), 1));
-                 });
-
-  C0Coons surface(boundaries);
-
-  TriMesh mesh = surface.meshTopology(resolution);
-  Point2DVector uvs = surface.parameters(resolution);
-  PointVector points; points.reserve(uvs.size());
-  std::transform(uvs.begin(), uvs.end(), std::back_inserter(points),
-                 [&](const Point2D &uv) { return surface.eval(uv); });
-  mesh.setPoints(points);
-  mesh.writeOBJ("test.obj");
+  C0Coons surface(readBezierBoundary(argv[1]));
+  surface.eval(resolution).writeOBJ("test.obj");
 }
