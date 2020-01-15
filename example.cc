@@ -5,32 +5,22 @@
 
 using namespace Geometry;
 
-std::vector<PointVector> readBezierBoundary(std::string filename) {
+std::vector<C0Coons::RationalCurve> readRationalBoundaries(std::string filename) {
   std::ifstream f(filename.c_str());
   f.exceptions(std::ios::failbit | std::ios::badbit);
 
   size_t n, d;
   f >> n >> d;
 
-  Point3D p;
-  f >> p[0] >> p[1] >> p[2];    // central control point (not used)
+  std::vector<C0Coons::RationalCurve> result;
+  PointVector points(d + 1);
+  DoubleVector weights(d + 1);
 
-  std::vector<PointVector> result;
-  PointVector ribbon;
-  for (size_t col = 0, side = 0; true; ++col) {
-    if (col > d) {
-      col = 1;
-      result.push_back(ribbon);
-      auto last = ribbon.back();
-      ribbon.clear();
-      ribbon.push_back(last);
-      if (++side == n)
-        break;
-    }
-    f >> p[0] >> p[1] >> p[2];
-    ribbon.push_back(p);
+  for (size_t i = 0; i < n; ++i) {
+    for (size_t j = 0; j <= d; ++j)
+      f >> points[j][0] >> points[j][1] >> points[j][2] >> weights[j];
+    result.emplace_back(points, weights);
   }
-  result.back().back() = result.front().front();
 
   return result;
 }
@@ -45,6 +35,6 @@ int main(int argc, char **argv) {
   if (argc == 3)
     resolution = std::atoi(argv[2]);
 
-  C0Coons surface(readBezierBoundary(argv[1]));
+  C0Coons surface(readRationalBoundaries(argv[1]));
   surface.eval(resolution).writeOBJ("test.obj");
 }

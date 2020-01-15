@@ -3,3 +3,4 @@ example
 *.o
 *.gbp
 *.obj
+*.rbl
