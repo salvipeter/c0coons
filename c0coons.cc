@@ -58,7 +58,7 @@ C0Coons::evalRationalDerivative(const RationalCurve &curve, double u) {
   PointVector dcp;
   DoubleVector dwi;
   for (size_t i = 0; i < n; ++i) {
-    dcp.push_back((cp[i+1] - cp[i]) * n);
+    dcp.push_back((cp[i+1] * wi[i+1] - cp[i] * wi[i]) * n);
     dwi.push_back((wi[i+1] - wi[i]) * n);
   }
 
@@ -74,7 +74,7 @@ C0Coons::evalRationalDerivative(const RationalCurve &curve, double u) {
   Point3D dp(0.0, 0.0, 0.0);
   double dw = 0;
   for (size_t k = 0; k < n; ++k) {
-    dp += dcp[k] * dwi[k] * coeff[k];
+    dp += dcp[k] * coeff[k];
     dw += dwi[k] * coeff[k];
   }
 
