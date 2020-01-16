@@ -107,7 +107,7 @@ C0Coons::initialize() {         // assumes that n_ and boundaries_ are already s
       auto p1 = corners_[im];
       auto p2 = p1 - evalRationalDerivative(boundaries_[imm], 1) / 3;
       auto q1 = corners_[ipp];
-      auto q2 = q1 + evalRationalDerivative(boundaries_[imm], 0) / 3;
+      auto q2 = q1 + evalRationalDerivative(boundaries_[ipp], 0) / 3;
       opposites_.push_back({ { q1, q2, p2, p1 }, { 1, 1, 1, 1 } });
     }
 }
