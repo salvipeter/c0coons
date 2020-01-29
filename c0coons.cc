@@ -18,69 +18,6 @@ static double inrange(double min, double x, double max) {
   return x;
 }
 
-static DoubleVector bernstein(size_t n, double u) {
-  DoubleVector coeff; coeff.reserve(n + 1);
-  coeff.push_back(1.0);
-  double u1 = 1.0 - u;
-  for (size_t j = 1; j <= n; ++j) {
-    double saved = 0.0;
-    for (size_t k = 0; k < j; ++k) {
-      double  tmp = coeff[k];
-      coeff[k] = saved + tmp * u1;
-      saved = tmp * u;
-    }
-    coeff.push_back(saved);
-  }
-  return coeff;
-}
-
-Point3D
-C0Coons::evalRational(const RationalCurve &curve, double u) {
-  const auto &cp = curve.first;
-  const auto &wi = curve.second;
-  size_t n = cp.size() - 1;
-  DoubleVector coeff = bernstein(n, u);
-  Point3D p(0.0, 0.0, 0.0);
-  double w = 0;
-  for (size_t k = 0; k <= n; ++k) {
-    p += cp[k] * wi[k] * coeff[k];
-    w += wi[k] * coeff[k];
-  }
-  return p / w;
-}
-
-Vector3D
-C0Coons::evalRationalDerivative(const RationalCurve &curve, double u) {
-  const auto &cp = curve.first;
-  const auto &wi = curve.second;
-  size_t n = cp.size() - 1;
-
-  PointVector dcp;
-  DoubleVector dwi;
-  for (size_t i = 0; i < n; ++i) {
-    dcp.push_back((cp[i+1] * wi[i+1] - cp[i] * wi[i]) * n);
-    dwi.push_back((wi[i+1] - wi[i]) * n);
-  }
-
-  DoubleVector coeff = bernstein(n, u);
-  Point3D p(0.0, 0.0, 0.0);
-  double w = 0;
-  for (size_t k = 0; k <= n; ++k) {
-    p += cp[k] * wi[k] * coeff[k];
-    w += wi[k] * coeff[k];
-  }
-
-  coeff = bernstein(n - 1, u);
-  Point3D dp(0.0, 0.0, 0.0);
-  double dw = 0;
-  for (size_t k = 0; k < n; ++k) {
-    dp += dcp[k] * coeff[k];
-    dw += dwi[k] * coeff[k];
-  }
-
-  return (dp - p / w * dw) / w;
-}
-
 void
 C0Coons::initialize() {         // assumes that n_ and boundaries_ are already set
   // Setup Domain
@@ -94,35 +31,32 @@ C0Coons::initialize() {         // assumes that n_ and boundaries_ are already s
 
   // Store corners
   for (const auto &b : boundaries_)
-    corners_.push_back(b.first.front());
+    corners_.push_back(b->eval(0));
 
   // Setup opposite curves
   if (n_ == 3) { // 0-degree rational Bezier curves
-    opposites_.push_back({ { corners_[2] }, { 1 } });
-    opposites_.push_back({ { corners_[0] }, { 1 } });
-    opposites_.push_back({ { corners_[1] }, { 1 } });
+    opposites_.push_back(std::dynamic_pointer_cast<CurveType>
+                         (std::make_shared<OnePointCurve>(corners_[2])));
+    opposites_.push_back(std::dynamic_pointer_cast<CurveType>
+                         (std::make_shared<OnePointCurve>(corners_[0])));
+    opposites_.push_back(std::dynamic_pointer_cast<CurveType>
+                         (std::make_shared<OnePointCurve>(corners_[1])));
   } else
     for (size_t i = 0; i < n_; ++i) {
       size_t imm = (i + n_ - 2) % n_, im = (i + n_ - 1) % n_, ipp = (i + 2) % n_;
       auto p1 = corners_[im];
-      auto p2 = p1 - evalRationalDerivative(boundaries_[imm], 1) / 3;
+      auto p2 = p1 - boundaries_[imm]->evalDerivative(1) / 3;
       auto q1 = corners_[ipp];
-      auto q2 = q1 + evalRationalDerivative(boundaries_[ipp], 0) / 3;
-      opposites_.push_back({ { q1, q2, p2, p1 }, { 1, 1, 1, 1 } });
+      auto q2 = q1 + boundaries_[ipp]->evalDerivative(0) / 3;
+      PointVector cpts = { q1, q2, p2, p1 };
+      opposites_.push_back(std::dynamic_pointer_cast<CurveType>
+                           (std::make_shared<BezierCurve>(cpts)));
     }
 }
 
-C0Coons::C0Coons(const std::vector<RationalCurve> &boundaries)
+C0Coons::C0Coons(const std::vector<std::shared_ptr<CurveType>> &boundaries)
   : n_(boundaries.size()), boundaries_(boundaries)
 {
-  initialize();
-}
-
-C0Coons::C0Coons(const std::vector<PointVector> &boundaries) : n_(boundaries.size()) {
-  std::transform(boundaries.begin(), boundaries.end(), std::back_inserter(boundaries_),
-                 [&](const PointVector &points) {
-                   return std::make_pair(points, DoubleVector(points.size(), 1));
-                 });
   initialize();
 }
 
@@ -131,8 +65,8 @@ C0Coons::evalRibbon(size_t i, const Point2D &sd) const {
   size_t im = (i + n_ - 1) % n_, ip = (i + 1) % n_, ipp = (i + 2) % n_;
   auto s = inrange(0, sd[0], 1), d = inrange(0, sd[1], 1);
   auto s1 = inrange(0, 1 - s, 1), d1 = inrange(0, 1 - d, 1);
-  auto p1 = evalRational(boundaries_[i], s) * d1 + evalRational(opposites_[i], s1) * d;
-  auto p2 = evalRational(boundaries_[im], d1) * s1 + evalRational(boundaries_[ip], d) * s;
+  auto p1 = boundaries_[i]->eval(s) * d1 + opposites_[i]->eval(s1) * d;
+  auto p2 = boundaries_[im]->eval(d1) * s1 + boundaries_[ip]->eval(d) * s;
   auto p12 = (corners_[i] * s1 + corners_[ip] * s) * d1 +
     (corners_[im] * s1 + corners_[ipp] * s) * d;
   return p1 + p2 - p12;
