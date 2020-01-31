@@ -4,7 +4,7 @@
 
 namespace Geometry {
 
-  class CurveType {             // base type
+  class CurveType {             // base type, parameterized in [0,1]
   public:
     virtual ~CurveType() { }
     virtual Point3D eval(double u) = 0;
@@ -37,7 +37,7 @@ namespace Geometry {
 
   class BSplineCurve : public CurveType { // just a wrapper on BSCurve
   public:
-    BSplineCurve(const BSCurve &curve) : c(curve) { }
+    BSplineCurve(const BSCurve &curve) : c(curve) { c.normalize(); }
     virtual Point3D eval(double u) override { return c.eval(u); }
     virtual Vector3D evalDerivative(double u) override {
       VectorVector der;
