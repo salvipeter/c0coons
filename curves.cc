@@ -24,7 +24,7 @@ RationalBezierCurve::RationalBezierCurve(const PointVector &cpts, const DoubleVe
 }
 
 Point3D
-RationalBezierCurve::eval(double u) {
+RationalBezierCurve::eval(double u) const {
   size_t n = cp.size() - 1;
   DoubleVector coeff = bernstein(n, u);
   Point3D p(0.0, 0.0, 0.0);
@@ -37,7 +37,7 @@ RationalBezierCurve::eval(double u) {
 }
 
 Vector3D
-RationalBezierCurve::evalDerivative(double u) {
+RationalBezierCurve::evalDerivative(double u) const {
   size_t n = cp.size() - 1;
 
   PointVector dcp;
