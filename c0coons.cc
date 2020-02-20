@@ -23,26 +23,26 @@ static double approximateArcLength(std::shared_ptr<CurveType> curve) {
                                  -0.339981044, 0.652145155,
                                  0.339981044, 0.652145155,
                                  0.861136312, 0.347854845};
-	double sum = 0.0;
+  double sum = 0.0;
   for (size_t i = 0; i < 8; i += 2)
     sum += curve->evalDerivative((gauss[i] + 1) / 2).norm() * gauss[i+1] / 2;
-	return sum;
+  return sum;
 }
 
 void
 C0Coons::initialize() {         // assumes that n_ and boundaries_ are already set
   // Setup domain based on arc lengths
-	DoubleVector lengths, angles;
-	std::transform(boundaries_.begin(), boundaries_.end(), std::back_inserter(lengths),
-								 approximateArcLength);
-	double length_sum = std::accumulate(lengths.begin(), lengths.end(), 0);
-	std::transform(lengths.begin(), lengths.end(), std::back_inserter(angles),
-								 [&](double l) { return 2 * M_PI * l / length_sum; });
-	double alpha = 0;
-	for (size_t i = 0; i < n_; ++i) {
-		alpha += angles[i];
-		domain_.emplace_back(std::cos(alpha), std::sin(alpha));
-	}
+  DoubleVector lengths, angles;
+  std::transform(boundaries_.begin(), boundaries_.end(), std::back_inserter(lengths),
+                 approximateArcLength);
+  double length_sum = std::accumulate(lengths.begin(), lengths.end(), 0);
+  std::transform(lengths.begin(), lengths.end(), std::back_inserter(angles),
+                 [&](double l) { return 2 * M_PI * l / length_sum; });
+  double alpha = 0;
+  for (size_t i = 0; i < n_; ++i) {
+    alpha += angles[i];
+    domain_.emplace_back(std::cos(alpha), std::sin(alpha));
+  }
 
   // Store corners
   for (const auto &b : boundaries_)
