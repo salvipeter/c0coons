@@ -4,8 +4,12 @@
 
 class C0Coons {
 public:
-  // Constructors & evaluation
-  C0Coons(const std::vector<std::shared_ptr<Geometry::CurveType>> &boundaries);
+  // Constructors & assignment
+  explicit C0Coons(std::vector<std::shared_ptr<Geometry::CurveType>> boundaries);
+  C0Coons(const C0Coons &) = default;
+  C0Coons &operator=(const C0Coons &) = default;
+
+  // Evaluation
   Geometry::Point3D eval(const Geometry::Point2D &uv) const;
   Geometry::TriMesh eval(size_t resolution) const;
 

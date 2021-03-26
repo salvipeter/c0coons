@@ -54,8 +54,8 @@ C0Coons::initialize() {         // assumes that n_ and boundaries_ are already s
     }
 }
 
-C0Coons::C0Coons(const std::vector<std::shared_ptr<CurveType>> &boundaries)
-  : n_(boundaries.size()), boundaries_(boundaries)
+C0Coons::C0Coons(std::vector<std::shared_ptr<CurveType>> boundaries)
+  : n_(boundaries.size()), boundaries_(std::move(boundaries))
 {
   initialize();
 }
