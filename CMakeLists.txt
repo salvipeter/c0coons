@@ -1,6 +1,8 @@
 project(c0coons)
 
-include_directories("../geom")
+set(LIBGEOM_DIR "../geom" CACHE FILEPATH "Libgeom path" FORCE)
+
+include_directories("${LIBGEOM_DIR}")
 
 add_library(c0coons STATIC
 	c0coons.cc
